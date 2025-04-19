@@ -1,5 +1,6 @@
 class SessionsController < Devise::SessionsController
   respond_to :json
+  before_action :configure_sign_in_params, only: [:create]
 
   def create
     self.resource = warden.authenticate!(auth_options)
@@ -16,33 +17,45 @@ class SessionsController < Devise::SessionsController
     response.headers['Authorization'] = "Bearer #{token}" if token
     
     render json: {
-      message: 'Logado(a) com sucesso.',
-      user: resource.as_json(only: [:id, :email, :name]),
+      message: I18n.t('devise.sessions.signed_in'),
+      user: user_json(resource),
       token: token
     }, status: :ok
   end
 
   def respond_to_on_destroy
-    head :no_content
+    render json: { message: I18n.t('devise.sessions.signed_out') }, status: :ok
   end
 
   def handle_authentication_error(exception)
-    error_message = case exception
-                    when Warden::Strategies::Base::Failure
-                      if exception.message == "Invalid Email or password."
-                        "Credenciais inválidas"
-                      else
-                        "Falha na autenticação"
-                      end
-                    when ActiveRecord::RecordNotFound
-                      "Conta não encontrada para o email informado"
-                    else
-                      "Ocorreu um erro durante o login"
-                    end
+    error_key, status = case exception
+                        when Warden::Strategies::Base::Failure
+                          if exception.message.include?('Invalid')
+                            ['devise.failure.invalid', :unauthorized]
+                          else
+                            ['devise.failure.unauthenticated', :unauthorized]
+                          end
+                        when ActiveRecord::RecordNotFound
+                          ['devise.failure.not_found_in_database', :not_found]
+                        else
+                          ['devise.failure.unknown', :internal_server_error]
+                        end
 
     render json: { 
-      message: error_message,
-      details: exception.message
-    }, status: :unauthorized
+      message: I18n.t(error_key),
+      details: Rails.env.development? ? exception.message : nil
+    }, status: status
+  end
+
+  def user_json(user)
+    user.as_json(
+      only: [:id, :email, :name],
+      methods: [:admin?]
+    )
+  end
+
+  # Permite parâmetros adicionais no login
+  def configure_sign_in_params
+    devise_parameter_sanitizer.permit(:sign_in, keys: [:otp_attempt]) # Exemplo para 2FA
   end
 end
