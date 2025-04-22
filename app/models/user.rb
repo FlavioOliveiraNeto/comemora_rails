@@ -5,7 +5,18 @@ class User < ApplicationRecord
          :jwt_authenticatable, jwt_revocation_strategy: Devise::JWT::RevocationStrategies::Null
 
   validates :name, presence: true
+  validates :email, format: { 
+    with: /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i,
+    message: :invalid
+  }
   validate :password_complexity
+  validates :password, length: {
+    minimum: 6,
+    maximum: 128,
+    too_short: I18n.t('activerecord.errors.models.user.attributes.password.too_short', count: 6),
+    too_long: I18n.t('activerecord.errors.models.user.attributes.password.too_long', count: 128)
+  }, if: -> { password.present? }
+
   enum role: { guest: 'guest', admin: 'admin' }
 
   after_initialize :set_default_role, if: :new_record?
@@ -19,6 +30,15 @@ class User < ApplicationRecord
     }
   end
 
+  def role=(value)
+    value_str = value.to_s
+    if self.class.roles.key?(value_str)
+      super(value_str)
+    else
+      raise ArgumentError, I18n.t('activerecord.errors.models.user.attributes.role.invalid', value: value)
+    end
+  end
+
   private
 
   def set_default_role
@@ -27,13 +47,17 @@ class User < ApplicationRecord
 
   def password_complexity
     return if password.blank?
-  
+
     unless password.match?(/[A-Z]/)
       errors.add :password, :missing_uppercase
     end
-  
+
     unless password.match?(/[!@#$%^&*(),.?":{}|<>]/)
       errors.add :password, :missing_special_char
+    end
+
+    unless password.match?(/\d/)
+      errors.add :password, :missing_number
     end
   end
 end

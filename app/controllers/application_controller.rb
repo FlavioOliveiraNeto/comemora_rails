@@ -17,7 +17,7 @@ class ApplicationController < ActionController::API
         headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, PATCH, DELETE, OPTIONS'
         headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         headers['Access-Control-Max-Age'] = '1728000'
-        render plain: '', content_type: 'text/plain'
+        head :no_content and return
       end
-    end
+    end    
 end

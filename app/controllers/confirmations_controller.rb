@@ -1,9 +1,24 @@
 class ConfirmationsController < Devise::ConfirmationsController
   respond_to :json
+
   before_action :validate_confirmation_token, only: [:show]
+
+  def create
+    self.resource = resource_class.send_confirmation_instructions(resource_params)
+
+    if successfully_sent?(resource)
+      render json: { message: I18n.t('devise.confirmations.send_instructions') }, status: :ok
+    else
+      render json: {
+        message: I18n.t('devise.confirmations.failed'),
+        errors: resource.errors.full_messages
+      }, status: :unprocessable_entity
+    end
+  end
 
   def show
     self.resource = confirm_resource
+
     if resource.errors.empty?
       render_confirmation_success
     else
@@ -27,10 +42,17 @@ class ConfirmationsController < Devise::ConfirmationsController
   end
 
   def render_confirmation_error
+    if resource.errors[:confirmation_token].include?("is invalid")
+      error_message = I18n.t('devise.errors.messages.invalid_confirmation_token')
+    elsif resource.errors[:confirmation_token].include?("is already confirmed")
+      error_message = I18n.t('devise.errors.messages.already_confirmed')
+    else
+      error_message = I18n.t('devise.confirmations.failed')
+    end
+
     render json: {
-      message: I18n.t('devise.confirmations.failed'),
-      errors: resource.errors.full_messages,
-      details: error_details(resource.errors)
+      message: error_message,
+      errors: resource.errors.full_messages
     }, status: :unprocessable_entity
   end
 
@@ -46,12 +68,6 @@ class ConfirmationsController < Devise::ConfirmationsController
       only: [:id, :email, :name, :confirmed_at],
       methods: [:admin?]
     )
-  end
-
-  def error_details(errors)
-    errors.details.each_with_object({}) do |(attribute, details), hash|
-      hash[attribute] = details.map { |d| d[:error] }
-    end
   end
 
   def validate_confirmation_token

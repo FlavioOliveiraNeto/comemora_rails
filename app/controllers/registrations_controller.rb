@@ -3,7 +3,16 @@ class RegistrationsController < Devise::RegistrationsController
   before_action :configure_sign_up_params, only: [:create]
 
   def create
+    if params[:user].blank?
+      render json: {
+        message: I18n.t('devise.registrations.missing_params')
+      }, status: :bad_request
+      return
+    end
+
     build_resource(sign_up_params)
+    Rails.logger.debug "Tentando criar usuário com os parâmetros: #{sign_up_params.inspect}" if Rails.env.development?
+
     resource.save
     if resource.persisted?
       render_registration_success(resource)
@@ -32,6 +41,7 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def handle_registration_error(exception)
+    Rails.logger.error "Erro ao registrar usuário: #{exception.message}" if Rails.env.development?
     render json: {
       message: I18n.t('devise.registrations.error'),
       details: Rails.env.development? ? exception.message : nil
