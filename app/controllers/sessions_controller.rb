@@ -1,6 +1,7 @@
 class SessionsController < Devise::SessionsController
   respond_to :json
   before_action :configure_sign_in_params, only: [:create]
+  skip_before_action :verify_signed_out_user, only: :destroy
 
   def create
     self.resource = warden.authenticate!(auth_options)
