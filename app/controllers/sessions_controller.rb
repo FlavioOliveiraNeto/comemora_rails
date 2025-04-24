@@ -13,11 +13,12 @@ class SessionsController < Devise::SessionsController
 
   def destroy
     if current_user
-      sign_out(resource_name)
-      if current_token = request.env['warden-jwt_auth.token']
+      if current_token = request.headers['Authorization']&.split('Bearer ')&.last
         Warden::JWTAuth::RevocationStrategy.new.call(current_token, :revocation)
       end
-      render_sign_out_success
+      
+      sign_out(current_user)
+      render json: { message: I18n.t('devise.sessions.signed_out') }, status: :ok
     else
       render json: { message: I18n.t('devise.failure.unauthenticated') }, status: :unauthorized
     end
@@ -43,7 +44,12 @@ class SessionsController < Devise::SessionsController
 
     render json: {
       message: I18n.t('devise.sessions.signed_in'),
-      user: user_json(user),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name, 
+        role: user.role
+      },
       token: token
     }, status: :ok
   end
@@ -60,6 +66,6 @@ class SessionsController < Devise::SessionsController
   end
 
   def configure_sign_in_params
-    devise_parameter_sanitizer.permit(:sign_in, keys: [:otp_attempt])
+    devise_parameter_sanitizer.permit(:sign_in, keys: [:email, :password])
   end
 end

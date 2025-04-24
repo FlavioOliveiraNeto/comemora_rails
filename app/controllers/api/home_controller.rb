@@ -3,7 +3,14 @@ module Api
     before_action :authenticate_user!
 
     def index
-      render json: { message: 'Bem-vindo à home!' }, status: :ok
+      user_data = {
+        user: current_user.as_json(only: [:id, :name, :email, :role]),
+        organized_events: current_user.organized_events.as_json(include: :participants),
+        participating_events: current_user.events.where(event_participants: { status: 'accepted' })
+                                         .as_json(include: [:admin, :participants])
+      }
+      
+      render json: user_data, status: :ok
     end
   end
 end

@@ -4,6 +4,8 @@ class User < ApplicationRecord
          :confirmable,
          :jwt_authenticatable, jwt_revocation_strategy: Devise::JWT::RevocationStrategies::Null
 
+  has_many :organized_events, class_name: 'Event', foreign_key: 'admin_id'
+
   validates :name, presence: true
   validates :email, format: { 
     with: /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i,
