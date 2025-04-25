@@ -6,8 +6,7 @@ module Api
       user_data = {
         user: current_user.as_json(only: [:id, :name, :email, :role]),
         organized_events: current_user.organized_events.as_json(include: :participants),
-        participating_events: current_user.events.where(event_participants: { status: 'accepted' })
-                                         .as_json(include: [:admin, :participants])
+        #participating_events: current_user.events.where(event_participants: { status: 'accepted' }).as_json(include: [:admin, :participants])
       }
       
       render json: user_data, status: :ok

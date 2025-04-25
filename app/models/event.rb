@@ -16,18 +16,6 @@ class Event < ApplicationRecord
   validates :description, length: { maximum: 1000 }
   validates :start_date, :end_date, presence: true
   validates :location, length: { maximum: 200 }
-  validates :latitude, numericality: { 
-    allow_nil: true, 
-    greater_than_or_equal_to: -90, 
-    less_than_or_equal_to: 90,
-    message: "deve estar entre -90 e 90"
-  }
-  validates :longitude, numericality: { 
-    allow_nil: true, 
-    greater_than_or_equal_to: -180, 
-    less_than_or_equal_to: 180,
-    message: "deve estar entre -180 e 180"
-  }
   validate :end_date_after_start_date
   validate :banner_validation
 
@@ -35,7 +23,6 @@ class Event < ApplicationRecord
   scope :upcoming, -> { where('start_date >= ?', Time.current).order(:start_date) }
   scope :past, -> { where('end_date < ?', Time.current).order(start_date: :desc) }
   scope :administered_by, ->(user) { where(admin: user) }
-  scope :with_location, -> { where.not(latitude: nil, longitude: nil) }
 
   # Role checking methods
   def admin?(user)
@@ -70,16 +57,6 @@ class Event < ApplicationRecord
   def banner_url
     return "default_banner_url" unless banner.attached?
     Rails.application.routes.url_helpers.url_for(banner)
-  end
-
-  # Location methods
-  def has_coordinates?
-    latitude.present? && longitude.present?
-  end
-
-  def full_location
-    return location unless latitude && longitude
-    "#{location} (#{latitude}, #{longitude})"
   end
 
   # Invitation system
