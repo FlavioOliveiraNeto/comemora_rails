@@ -1,4 +1,3 @@
-# app/models/event.rb
 class Event < ApplicationRecord
   # Associations
   belongs_to :admin, class_name: 'User'
@@ -9,35 +8,52 @@ class Event < ApplicationRecord
   has_many :event_media, dependent: :destroy
   has_many :media, through: :event_media
   
+  # Active Storage para banner
+  has_one_attached :banner
+
   # Validations
   validates :title, presence: true, length: { maximum: 100 }
   validates :description, length: { maximum: 1000 }
   validates :start_date, :end_date, presence: true
   validates :location, length: { maximum: 200 }
+  validates :latitude, numericality: { 
+    allow_nil: true, 
+    greater_than_or_equal_to: -90, 
+    less_than_or_equal_to: 90,
+    message: "deve estar entre -90 e 90"
+  }
+  validates :longitude, numericality: { 
+    allow_nil: true, 
+    greater_than_or_equal_to: -180, 
+    less_than_or_equal_to: 180,
+    message: "deve estar entre -180 e 180"
+  }
   validate :end_date_after_start_date
-  
+  validate :banner_validation
+
   # Scopes
   scope :upcoming, -> { where('start_date >= ?', Time.current).order(:start_date) }
   scope :past, -> { where('end_date < ?', Time.current).order(start_date: :desc) }
   scope :administered_by, ->(user) { where(admin: user) }
-  
+  scope :with_location, -> { where.not(latitude: nil, longitude: nil) }
+
   # Role checking methods
   def admin?(user)
     admin == user
   end
-  
+
   def participant?(user)
     participants.exists?(user.id)
   end
-  
+
   def participant_status(user)
     event_participants.find_by(user: user)&.status
   end
-  
+
   def accepted_participant?(user)
     participant_status(user) == 'accepted'
   end
-  
+
   # Media management
   def add_media(user, media_file)
     return false unless can_add_media?(user)
@@ -45,36 +61,64 @@ class Event < ApplicationRecord
     medium = user.media.create(file: media_file)
     event_media.create(medium: medium)
   end
-  
+
   def can_add_media?(user)
     admin?(user) || accepted_participant?(user)
   end
-  
+
+  # Banner methods
+  def banner_url
+    return "default_banner_url" unless banner.attached?
+    Rails.application.routes.url_helpers.url_for(banner)
+  end
+
+  # Location methods
+  def has_coordinates?
+    latitude.present? && longitude.present?
+  end
+
+  def full_location
+    return location unless latitude && longitude
+    "#{location} (#{latitude}, #{longitude})"
+  end
+
   # Invitation system
   def invite_user(user)
     return if admin?(user) || participant?(user)
     
+    user = User.find_by(id: user.id)
+    return false unless user
+
     event_participants.create(user: user, status: 'invited')
   end
-  
+
   def accept_invitation(user)
     participant = event_participants.find_by(user: user)
     participant&.update(status: 'accepted')
   end
-  
+
   def decline_invitation(user)
     participant = event_participants.find_by(user: user)
     participant&.update(status: 'declined')
   end
-  
-  # Date validation
+
   private
-  
+
   def end_date_after_start_date
     return if start_date.blank? || end_date.blank?
     
     if end_date < start_date
       errors.add(:end_date, "precisa ser depois da data de início")
+    end
+  end
+
+  def banner_validation
+    return unless banner.attached?
+    
+    if banner.blob.byte_size > 10.megabytes
+      errors.add(:banner, "é muito grande (máximo 10MB)")
+    elsif !banner.blob.content_type.starts_with?('image/')
+      errors.add(:banner, "precisa ser uma imagem")
     end
   end
 end
