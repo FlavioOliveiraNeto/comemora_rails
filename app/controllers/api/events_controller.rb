@@ -1,5 +1,7 @@
 module Api
   class EventsController < ApplicationController
+    include Pundit::Authorization
+    
     before_action :authenticate_user!
     before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :upload_media, :leave]
     before_action :authorize_event, except: [:index, :create, :my_events, :participating]
@@ -27,7 +29,13 @@ module Api
       @event = current_user.organized_events.new(event_params)
       
       if @event.save
-        render json: @event, status: :created
+        # Adicione esta linha para processar o banner se existir
+        @event.banner.attach(params[:event][:banner]) if params[:event][:banner]
+        
+        render json: { 
+          evento: @event.as_json.merge(banner_url: @event.banner_url),
+          message: 'Evento criado com sucesso.' 
+        }, status: :created
       else
         render json: @event.errors, status: :unprocessable_entity
       end
@@ -35,15 +43,35 @@ module Api
 
     # GET /api/events/:id
     def show
-      render json: @event.as_json(include: [:participants, :media]), status: :ok
+      render json: @event.as_json(
+        include: {
+          participants: { only: [:id, :name, :email] }
+        },
+        methods: [:banner_url]
+      ), status: :ok
     end
 
     # PUT/PATCH /api/events/:id
     def update
-      if @event.update(event_params)
-        render json: @event
+      keep_banner = params[:event].delete(:keep_banner)
+      @event.assign_attributes(event_params)
+    
+      # Lógica de controle do banner
+      if keep_banner == 'false' && @event.banner.attached?
+        @event.banner.purge_later
+      end
+    
+      if @event.save
+        @event.banner.attach(params[:event][:banner]) if params[:event][:banner]
+        render json: { 
+          evento: @event.as_json(methods: [:banner_url]),
+          message: 'Evento atualizado com sucesso'
+        }
       else
-        render json: @event.errors, status: :unprocessable_entity
+        render json: { 
+          errors: @event.errors.full_messages,
+          message: 'Falha na atualização'
+        }, status: :unprocessable_entity
       end
     end
 
@@ -123,7 +151,7 @@ module Api
         :start_date, 
         :end_date, 
         :location,
-        :banner
+        :banner,
       )
     end
   end

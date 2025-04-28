@@ -55,8 +55,13 @@ class Event < ApplicationRecord
 
   # Banner methods
   def banner_url
-    return "default_banner_url" unless banner.attached?
-    Rails.application.routes.url_helpers.url_for(banner)
+    return nil unless banner.attached?
+    
+    Rails.application.routes.url_helpers.rails_blob_url(
+      banner,
+      host: 'localhost:3000',
+      protocol: 'http'
+    )
   end
 
   # Invitation system
