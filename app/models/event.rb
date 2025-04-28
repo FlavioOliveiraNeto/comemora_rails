@@ -1,4 +1,6 @@
 class Event < ApplicationRecord
+  before_create :generate_invite_token
+
   # Associations
   belongs_to :admin, class_name: 'User'
   
@@ -102,5 +104,9 @@ class Event < ApplicationRecord
     elsif !banner.blob.content_type.starts_with?('image/')
       errors.add(:banner, "precisa ser uma imagem")
     end
+  end
+
+  def generate_invite_token
+    self.invite_token = SecureRandom.urlsafe_base64(16)
   end
 end

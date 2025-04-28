@@ -17,6 +17,7 @@ Rails.application.routes.draw do
         post 'decline'              # Recusar convite
         post 'upload_media'         # Upload de mídia
         delete 'leave'              # Sair do evento
+        get :event_details
       end
       
       collection do

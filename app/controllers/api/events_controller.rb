@@ -3,8 +3,9 @@ module Api
     include Pundit::Authorization
     
     before_action :authenticate_user!
+    skip_before_action :authenticate_user!, only: [:event_details]
     before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :upload_media, :leave]
-    before_action :authorize_event, except: [:index, :create, :my_events, :participating]
+    before_action :authorize_event, except: [:index, :create, :my_events, :participating, :event_details]
 
     # GET /api/events
     def index
@@ -98,11 +99,15 @@ module Api
 
     # POST /api/events/:id/join
     def join
-      if @event.accept_invitation(current_user)
-        render json: { message: 'Você entrou no evento com sucesso' }
-      else
-        render json: { error: 'Não foi possível entrar no evento' }, status: :unprocessable_entity
+      event = Event.find(params[:id])
+      participant = event.participants.find_by(invite_token: params[:token])
+    
+      if participant.nil?
+        render json: { error: 'Convite inválido' }, status: :forbidden
+        return
       end
+    
+      render json: event, status: :ok
     end
 
     # POST /api/events/:id/decline
@@ -132,6 +137,36 @@ module Api
       else
         render json: { error: 'Não foi possível sair do evento' }, status: :unprocessable_entity
       end
+    end
+
+    # GET /api/events/:id/event_details
+    def event_details
+      @event = Event.find_by(id: params[:id])
+    
+      if @event.nil?
+        return render json: { error: 'Evento não encontrado' }, status: :not_found
+      end
+    
+      authorized = false
+    
+      if user_signed_in?
+        authorized = @event.admin?(current_user) || @event.participant?(current_user)
+      end
+    
+      if !authorized && params[:token].present?
+        authorized = Event.where(invite_token: params[:token]).present?
+      end
+    
+      unless authorized
+        return render json: { error: 'Você não tem permissão para ver este evento.' }, status: :forbidden
+      end
+    
+      render json: @event.as_json(
+        include: {
+          participants: { only: [:id, :name, :email] }
+        },
+        methods: [:banner_url]
+      ), status: :ok
     end
 
     private
