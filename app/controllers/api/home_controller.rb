@@ -1,3 +1,4 @@
+# home_controller.rb
 module Api
   class HomeController < ApplicationController
     before_action :authenticate_user!
@@ -5,14 +6,32 @@ module Api
     def index
       user_data = {
         user: current_user.as_json(only: [:id, :name, :email, :role]),
-        organized_events: current_user.organized_events.as_json(
-          include: :participants,
-          methods: [:banner_url]
-        ),
-        #participating_events: current_user.events.where(event_participants: { status: 'accepted' }).as_json(include: [:admin, :participants])
+        organized_events: serialized_organized_events,
+        participating_events: serialized_participating_events
       }
       
       render json: user_data, status: :ok
+    end
+
+    private
+
+    def serialized_organized_events
+      current_user.organized_events.as_json(
+        include: {
+          participants: { only: [:id, :name, :email] }
+        },
+        methods: [:banner_url]
+      )
+    end
+
+    def serialized_participating_events
+      current_user.participating_events.where(event_participants: { status: 'accepted' }).as_json(
+        include: {
+          admin: { only: [:id, :name, :email] },
+          participants: { only: [:id, :name, :email] }
+        },
+        methods: [:banner_url]
+      )
     end
   end
 end

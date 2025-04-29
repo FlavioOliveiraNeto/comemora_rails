@@ -5,6 +5,8 @@ class User < ApplicationRecord
          :jwt_authenticatable, jwt_revocation_strategy: Devise::JWT::RevocationStrategies::Null
 
   has_many :organized_events, class_name: 'Event', foreign_key: 'admin_id'
+  has_many :event_participants, foreign_key: 'user_id', dependent: :destroy
+  has_many :participating_events, through: :event_participants, source: :event
 
   validates :name, presence: true
   validates :email, format: { 

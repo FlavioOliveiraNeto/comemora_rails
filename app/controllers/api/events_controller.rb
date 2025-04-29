@@ -99,15 +99,21 @@ module Api
 
     # POST /api/events/:id/join
     def join
-      event = Event.find(params[:id])
-      participant = event.participants.find_by(invite_token: params[:token])
+      begin
+        event = Event.find(params[:id])
+        
+        return invalid_token_response unless valid_token?(event)
     
-      if participant.nil?
-        render json: { error: 'Convite inválido' }, status: :forbidden
-        return
+        participant = event.event_participants.find_or_create_by(
+          user_id: current_user.id,
+          status: 'accepted' # Ou o status apropriado
+        )
+    
+        participant.persisted? ? success_response(event) : error_response(participant)
+    
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Evento não encontrado' }, status: :not_found
       end
-    
-      render json: event, status: :ok
     end
 
     # POST /api/events/:id/decline
@@ -177,6 +183,28 @@ module Api
 
     def authorize_event
       authorize @event
+    end
+
+    def valid_token?(event)
+      event.invite_token == params[:token]
+    end
+    
+    def invalid_token_response
+      render json: { error: 'Convite inválido' }, status: :forbidden
+    end
+
+    def success_response(event)
+      render json: { 
+        event: event,
+        message: 'Você entrou no evento com sucesso!'
+      }, status: :ok
+    end
+    
+    def error_response(participant)
+      render json: { 
+        error: 'Não foi possível entrar no evento',
+        details: participant.errors.full_messages 
+      }, status: :unprocessable_entity
     end
 
     def event_params

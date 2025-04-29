@@ -27,11 +27,11 @@ class EventPolicy
   end
 
   def join?
-    event.participant_status(user) == 'invited'
+    !event.participant_status(user).present?
   end
 
   def decline?
-    event.participant_status(user) == 'invited'
+    !event.participant_status(user).present?
   end
 
   def add_media?
