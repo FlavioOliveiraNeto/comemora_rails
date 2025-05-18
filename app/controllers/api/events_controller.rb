@@ -4,7 +4,7 @@ module Api
     
     before_action :authenticate_user!
     skip_before_action :authenticate_user!, only: [:event_details]
-    before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :upload_media, :leave]
+    before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :add_media, :leave]
     before_action :authorize_event, except: [:index, :create, :my_events, :participating, :event_details]
 
     # GET /api/events
@@ -44,9 +44,19 @@ module Api
 
     # GET /api/events/:id
     def show
-      render json: @event.as_json(
+      event = Event.find(params[:id])
+
+      unless event.admin?(current_user) || event.accepted_participant?(current_user)
+        return render json: { error: 'Não autorizado' }, status: :forbidden
+      end
+
+      render json: event.as_json(
         include: {
-          participants: { only: [:id, :name, :email] }
+          participants: { only: [:id, :name, :email] },
+          media: {
+            only: [:id, :user_id, :file_data, :created_at],
+            methods: [:file_url]
+          }
         },
         methods: [:banner_url]
       ), status: :ok
@@ -125,12 +135,31 @@ module Api
       end
     end
 
-    # POST /api/events/:id/upload_media
-    def upload_media
-      if @event.add_media(current_user, params[:file])
-        render json: { message: 'Mídia adicionada com sucesso' }
+    # POST /api/events/:id/add_media
+    def add_media
+      @event = Event.find(params[:id])
+      authorize @event, :add_media?
+
+      media_params = {
+        file: params[:media][:file],
+        type: params[:media][:type] # 'photo' ou 'video'
+      }
+
+      medium = @event.add_media(current_user, media_params)
+
+      if medium&.persisted? && medium.file.attached?
+        render json: {
+          id: medium.id,
+          file_url: url_for(medium.file),
+          user_id: medium.user_id,
+          file_data: medium.file_data,
+          created_at: medium.created_at
+        }, status: :created
       else
-        render json: { error: 'Não foi possível adicionar a mídia' }, status: :unprocessable_entity
+        render json: { 
+          error: 'Falha ao adicionar mídia',
+          errors: medium&.errors&.full_messages || ['Arquivo não pôde ser anexado']
+        }, status: :unprocessable_entity
       end
     end
 
@@ -205,6 +234,15 @@ module Api
         error: 'Não foi possível entrar no evento',
         details: participant.errors.full_messages 
       }, status: :unprocessable_entity
+    end
+
+    def medium_json(medium)
+      {
+        id: medium.id,
+        file_url: medium.file.attached? ? url_for(medium.file) : nil,
+        user_id: medium.user_id,
+        created_at: medium.created_at
+      }
     end
 
     def event_params
