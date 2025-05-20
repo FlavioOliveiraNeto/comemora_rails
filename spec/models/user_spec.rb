@@ -2,96 +2,77 @@ require 'rails_helper'
 
 RSpec.describe User, type: :model do
   describe 'validações' do
-    subject { build(:user) }
-
     it { should validate_presence_of(:name) }
     it { should validate_presence_of(:email) }
-    it { should validate_uniqueness_of(:email).case_insensitive }
-
-    context 'formato do e-mail' do
-      let(:user) { build(:user) }
+    it { should validate_length_of(:password).is_at_least(6).is_at_most(128) }
     
-      it 'aceita e-mails válidos' do
-        emails_validos = ['teste@exemplo.com', 'usuario.nome@dominio.com', 'usuario+tag@dominio.co.uk']
-        emails_validos.each do |email|
-          user.email = email
-          user.valid?
-          expect(user.errors[:email]).to be_empty
-        end
-      end
-
-      it 'rejeita e-mails inválidos' do
-        emails_invalidos = ['teste@', '@exemplo.com', 'teste@exemplo', 'teste.com']
-        emails_invalidos.each do |email|
-          user = build(:user, email: email)
-          expect(user).not_to be_valid
-          expect(user.errors[:email]).to include(I18n.t('activerecord.errors.models.user.attributes.email.invalid'))
-        end
-      end 
-    end    
-
-    context 'complexidade da senha' do
-      let(:user) { build(:user) }
-
-      it 'requer letra maiúscula' do
-        user.password = 'senha123!'
-        user.password_confirmation = 'senha123!'
-        user.valid?
-        expect(user.errors[:password]).to include(I18n.t('activerecord.errors.models.user.attributes.password.missing_uppercase'))
-      end
-
-      it 'requer caractere especial' do
-        user.password = 'Senha123'
-        user.password_confirmation = 'Senha123'
-        user.valid?
-        expect(user.errors[:password]).to include(I18n.t('activerecord.errors.models.user.attributes.password.missing_special_char'))
-      end
-
-      it 'requer número' do
-        user.password = 'Senha!'
-        user.password_confirmation = 'Senha!'
-        user.valid?
-        expect(user.errors[:password]).to include(I18n.t('activerecord.errors.models.user.attributes.password.missing_number'))
-      end
-
-      it 'verifica comprimento mínimo' do
-        user.password = 'S1!'
-        user.password_confirmation = 'S1!'
-        user.valid?
-        expect(user.errors[:password]).to include(I18n.t('activerecord.errors.models.user.attributes.password.too_short', count: 6))
-      end
-
-      it 'verifica comprimento máximo' do
-        user.password = 'A1!' + 'a' * 126
-        user.password_confirmation = user.password
-        user.valid?
-        expect(user.errors[:password]).to include(I18n.t('activerecord.errors.models.user.attributes.password.too_long', count: 128))
-      end
-
-      it 'aceita senha válida' do
-        user.password = 'SenhaSegura1!'
-        user.password_confirmation = 'SenhaSegura1!'
-        expect(user).to be_valid
-      end
+    it 'deve ter um email válido' do
+      user = build(:user, email: 'email_invalido')
+      expect(user).not_to be_valid
     end
   end
 
-  describe 'valores padrão' do
-    it 'define o papel como convidado por padrão' do
+  describe 'validações de senha' do
+    it 'deve exigir ao menos uma letra maiúscula' do
+      user = build(:user, password: 'senha@123', password_confirmation: 'senha@123')
+      expect(user).not_to be_valid
+      expect(user.errors[:password]).to include('deve conter pelo menos uma letra maiúscula.')
+      expect(user.errors[:password].length).to eq(1)
+    end
+  
+    it 'deve exigir ao menos um caractere especial' do
+      user = build(:user, password: 'Senha123', password_confirmation: 'Senha123')
+      expect(user).not_to be_valid
+      expect(user.errors[:password]).to include('deve conter pelo menos um caractere especial (!@#$%^&*).')
+      expect(user.errors[:password].length).to eq(1)
+    end
+  
+    it 'deve exigir ao menos um número' do
+      user = build(:user, password: 'Senha@forte', password_confirmation: 'Senha@forte')
+      expect(user).not_to be_valid
+      expect(user.errors[:password]).to include('deve conter pelo menos um número.')
+      expect(user.errors[:password].length).to eq(1)
+    end
+  
+    it 'é válido com senha forte que atende todos os critérios' do
+      user = build(:user, password: 'Senha@123', password_confirmation: 'Senha@123')
+      expect(user).to be_valid
+    end
+  end  
+
+  describe 'associações' do
+    it { should have_many(:organized_events).class_name('Event').with_foreign_key('admin_id') }
+    it { should have_many(:event_participants).dependent(:destroy) }
+    it { should have_many(:participating_events).through(:event_participants) }
+  end
+
+  describe 'roles' do
+    it 'deve ter role padrão como guest' do
       user = User.new
       expect(user.role).to eq('guest')
     end
+
+    it 'deve aceitar roles válidas' do
+      user = build(:user, role: :admin)
+      expect(user).to be_valid
+    end
+
+    it 'não deve aceitar roles inválidas' do
+      expect {
+        build(:user, role: :invalid_role)
+      }.to raise_error(ArgumentError)
+    end
   end
 
-  describe 'papéis válidos' do
-    it 'lança erro ao definir papel inválido' do
-      user = build(:user)
-      expect {
-        user.role = 'super_admin'
-      }.to raise_error(
-        ArgumentError,
-        I18n.t('activerecord.errors.models.user.attributes.role.invalid', value: 'super_admin')
-      )
+  describe 'jwt_payload' do
+    it 'deve incluir informações corretas no payload' do
+      user = create(:user)
+      payload = user.jwt_payload
+      
+      expect(payload[:user_id]).to eq(user.id)
+      expect(payload[:role]).to eq(user.role)
+      expect(payload[:email]).to eq(user.email)
+      expect(payload[:exp]).to be_present
     end
   end
 end

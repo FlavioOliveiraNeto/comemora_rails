@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :event_participant do
-    event { nil }
-    user { nil }
-    status { "MyString" }
+    association :event
+    association :user
+    status { 'accepted' }
   end
 end

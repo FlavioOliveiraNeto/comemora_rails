@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :user do
-    name { 'Test User' }
-    sequence(:email) { |n| "user#{n}@example.com" }
-    password { 'Password1!' }
-    password_confirmation { 'Password1!' }
-    confirmed_at { Time.current }
+    sequence(:name) { |n| "Usuário #{n}" }
+    sequence(:email) { |n| "usuario#{n}@exemplo.com" }
+    password { 'Senha@123' }
+    password_confirmation { 'Senha@123' }
+    role { 'guest' }
   end
 end

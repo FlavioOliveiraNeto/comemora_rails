@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :event_medium do
-    event { nil }
-    medium { nil }
+    association :event
+    association :medium
   end
 end
