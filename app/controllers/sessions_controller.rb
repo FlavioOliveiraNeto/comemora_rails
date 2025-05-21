@@ -12,11 +12,7 @@ class SessionsController < Devise::SessionsController
   end
 
   def destroy
-    if current_user
-      if current_token = request.headers['Authorization']&.split('Bearer ')&.last
-        Warden::JWTAuth::RevocationStrategy.new.call(current_token, :revocation)
-      end
-      
+    if current_user      
       sign_out(current_user)
       render json: { message: I18n.t('devise.sessions.signed_out') }, status: :ok
     else

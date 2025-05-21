@@ -49,7 +49,7 @@ RSpec.describe PasswordsController, type: :request do
   end
   
   describe 'PUT /users/password' do
-    let(:user) { create(:user) }
+    let(:user) { create(:user, confirmed_at: Time.current) }
     
     # Gera um token fresco para cada teste
     let(:valid_token) do

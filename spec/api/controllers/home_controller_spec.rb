@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Api::HomeController, type: :controller do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, confirmed_at: Time.current) }
   let(:organized_event) { create(:event, admin: user) }
   let(:participating_event) { create(:event) }
 

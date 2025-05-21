@@ -1,9 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Api::ParticipantsController, type: :controller do
-  let(:admin) { create(:user) }
+  let(:admin) { create(:user, confirmed_at: Time.current) }
   let(:event) { create(:event, admin: admin) }
-  let(:participant) { create(:user) }
+  let(:participant) { create(:user, confirmed_at: Time.current) }
 
   before do
     sign_in admin

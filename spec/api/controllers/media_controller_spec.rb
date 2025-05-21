@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Api::MediaController, type: :controller do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, confirmed_at: Time.current) }
   let(:event) { create(:event, admin: user) }
   let(:medium) { create(:medium, user: user) }
 

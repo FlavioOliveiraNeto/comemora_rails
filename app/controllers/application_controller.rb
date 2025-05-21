@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::API
+  include Devise::Controllers::Helpers
     before_action :cors_preflight_check
     after_action :cors_set_access_control_headers
   

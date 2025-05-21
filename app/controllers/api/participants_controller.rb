@@ -1,5 +1,7 @@
 module Api
     class ParticipantsController < ApplicationController
+      include Pundit::Authorization
+      
       before_action :authenticate_user!
       before_action :set_event
       before_action :authorize_event_admin, only: [:destroy]

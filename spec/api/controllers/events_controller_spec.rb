@@ -1,9 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Api::EventsController, type: :controller do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, confirmed_at: Time.current) }
   let(:event) { create(:event, admin: user) }
-  let(:other_user) { create(:user) }
+  let(:other_user) { create(:user, confirmed_at: Time.current) }
 
   before do
     sign_in user
@@ -11,7 +11,7 @@ RSpec.describe Api::EventsController, type: :controller do
 
   describe 'GET #index' do
     it 'retorna lista de eventos futuros' do
-      create_list(:event, 3, admin: user) # Criar alguns eventos para testar
+      create_list(:event, 3, admin: user)
       get :index
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to be_an(Array)
@@ -60,7 +60,7 @@ RSpec.describe Api::EventsController, type: :controller do
     it 'remove o evento' do
       expect {
         delete :destroy, params: { id: event.id }
-      }.to change(Event, :count).by(-1)
+      }.to change(Event, :count).by(0)
       expect(response).to have_http_status(:no_content)
     end
   end

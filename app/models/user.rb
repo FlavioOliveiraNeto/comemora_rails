@@ -2,7 +2,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
          :confirmable,
-         :jwt_authenticatable, jwt_revocation_strategy: Devise::JWT::RevocationStrategies::Null
+         :jwt_authenticatable, jwt_revocation_strategy: JwtDenylist
 
   has_many :organized_events, class_name: 'Event', foreign_key: 'admin_id'
   has_many :event_participants, foreign_key: 'user_id', dependent: :destroy
