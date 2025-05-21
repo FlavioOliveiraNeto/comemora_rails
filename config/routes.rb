@@ -14,7 +14,6 @@ Rails.application.routes.draw do
         post 'invite'           # Convidar usuário
         post 'join'             # Aceitar convite
         post 'decline'          # Recusar convite
-        post 'add_media'     # Upload de mídia
         delete 'leave'          # Sair do evento
         get :event_details      # Informações detalhadas do evento
       end
@@ -25,7 +24,7 @@ Rails.application.routes.draw do
       end
 
       resources :participants, only: [:index, :destroy]
-      resources :media, only: [:index, :destroy]
+      resources :media, only: [:index, :create, :destroy]
     end
   end
 end

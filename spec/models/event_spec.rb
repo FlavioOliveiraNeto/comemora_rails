@@ -8,10 +8,11 @@ RSpec.describe Event, type: :model do
     it { should validate_presence_of(:start_date) }
     it { should validate_presence_of(:end_date) }
     it { should validate_length_of(:location).is_at_most(200) }
-    
+
     it 'deve validar que a data final é após a data inicial' do
       event = build(:event, start_date: Time.current, end_date: 1.day.ago)
       expect(event).not_to be_valid
+      expect(event.errors[:end_date]).to include("precisa ser depois da data de início")
     end
   end
 
@@ -57,25 +58,6 @@ RSpec.describe Event, type: :model do
       expect {
         event.invite_user(user)
       }.to change(EventParticipant, :count).by(1)
-    end
-  end
-
-  describe 'gerenciamento de mídia' do
-    let(:user) { create(:user) }
-    let(:event) { create(:event) }
-
-    before do
-      create(:event_participant, event: event, user: user, status: 'accepted')
-    end
-
-    it 'deve adicionar mídia ao evento' do
-      media_file = fixture_file_upload('spec/fixtures/image.png', 'image/png')
-
-      medium = event.add_media(user, file: media_file, type: 'photo')
-
-      expect(medium).to be_a(Medium)
-      expect(medium).to be_persisted
-      expect(event.media).to include(medium)
     end
   end
 end

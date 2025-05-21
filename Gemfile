@@ -52,6 +52,10 @@ group :development, :test do
   gem 'factory_bot_rails'
   gem 'faker'
   gem 'shoulda-matchers'
+  gem 'capybara'
+  gem 'selenium-webdriver'  # opcional, mas recomendado para testes JS
+  gem 'webdrivers'           # ajuda a baixar automaticamente o driver do navegador
+  gem 'warden'  
 end
 
 group :development do
@@ -59,7 +63,6 @@ group :development do
   gem 'web-console', '>= 3.3.0'
   gem 'letter_opener'
 end
-
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]

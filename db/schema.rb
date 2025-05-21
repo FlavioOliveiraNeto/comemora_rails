@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_05_21_035717) do
+ActiveRecord::Schema.define(version: 2025_05_21_042427) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -84,9 +84,9 @@ ActiveRecord::Schema.define(version: 2025_05_21_035717) do
 
   create_table "media", force: :cascade do |t|
     t.bigint "user_id"
-    t.text "file_data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "description"
     t.index ["user_id"], name: "index_media_on_user_id"
   end
 

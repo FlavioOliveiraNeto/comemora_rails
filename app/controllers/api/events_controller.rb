@@ -54,7 +54,7 @@ module Api
         include: {
           participants: { only: [:id, :name, :email] },
           media: {
-            only: [:id, :user_id, :file_data, :created_at],
+            only: [:id, :user_id, :description, :created_at],
             methods: [:file_url]
           }
         },
@@ -132,34 +132,6 @@ module Api
         render json: { message: 'Convite recusado com sucesso' }
       else
         render json: { error: 'Não foi possível recusar o convite' }, status: :unprocessable_entity
-      end
-    end
-
-    # POST /api/events/:id/add_media
-    def add_media
-      @event = Event.find(params[:id])
-      authorize @event, :add_media?
-
-      media_params = {
-        file: params[:media][:file],
-        type: params[:media][:type] # 'photo' ou 'video'
-      }
-
-      medium = @event.add_media(current_user, media_params)
-
-      if medium&.persisted? && medium.file.attached?
-        render json: {
-          id: medium.id,
-          file_url: url_for(medium.file),
-          user_id: medium.user_id,
-          file_data: medium.file_data,
-          created_at: medium.created_at
-        }, status: :created
-      else
-        render json: { 
-          error: 'Falha ao adicionar mídia',
-          errors: medium&.errors&.full_messages || ['Arquivo não pôde ser anexado']
-        }, status: :unprocessable_entity
       end
     end
 

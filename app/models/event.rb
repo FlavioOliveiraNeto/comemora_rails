@@ -41,36 +41,6 @@ class Event < ApplicationRecord
 
   def accepted_participant?(user)
     participant_status(user) == 'accepted'
-  end
-
-  # Media management
-  def add_media(user, media_params)
-    return false unless can_add_media?(user)
-  
-    media_file = media_params[:file]
-    media_type = media_params[:type]
-  
-    return false unless media_file.respond_to?(:original_filename)
-  
-    medium = Medium.new(user: user)
-  
-    medium.file.attach(
-      io: media_file,
-      filename: media_file.original_filename,
-      content_type: media_file.content_type
-    )
-  
-    # Define o tipo de mídia
-    medium.file_data = media_type.presence || 
-                       (media_file.content_type&.start_with?('image/') ? 'photo' : 'video')
-  
-    if medium.save
-      event_media.create(medium: medium)
-      medium
-    else
-      Rails.logger.warn("Falha ao salvar medium: #{medium.errors.full_messages}")
-      false
-    end
   end  
 
   def can_add_media?(user)

@@ -8,8 +8,48 @@ module Api
 
     # GET /api/events/:event_id/media
     def index
-      @media = @event.media.order(created_at: :desc)
-      render json: @media.map { |m| { id: m.id, url: m.file_url, created_at: m.created_at } }
+      @media = @event.media.includes(:user).order(created_at: :desc)
+
+      render json: @media.map { |m|
+        {
+          id: m.id,
+          file_url: url_for(m.file),
+          user_id: m.user_id,
+          description: m.description,
+          created_at: m.created_at
+        }
+      }
+    end
+
+    # POST /api/events/:event_id/media
+    def create
+      return render json: { error: 'Não autorizado' }, status: :forbidden unless @event.can_add_media?(current_user)
+      
+      media_params = params.require(:media).permit(:file, :description)
+
+      @medium = Medium.new(
+        user: current_user,
+        description: media_params[:description]
+      )
+
+      @medium.file.attach(media_params[:file])
+
+      if @event.can_add_media?(current_user) && @medium.save
+        @event.event_media.create!(medium: @medium)
+
+        render json: {
+          id: @medium.id,
+          file_url: url_for(@medium.file),
+          user_id: @medium.user_id,
+          description: @medium.description,
+          created_at: @medium.created_at
+        }, status: :created
+      else
+        render json: {
+          error: 'Falha ao adicionar mídia',
+          errors: @medium.errors.full_messages
+        }, status: :unprocessable_entity
+      end
     end
 
     # DELETE /api/events/:event_id/media/:id
@@ -32,7 +72,6 @@ module Api
     end
 
     def authorize_medium
-      # Só o admin do evento ou o dono da mídia pode deletar
       unless @event.admin?(current_user) || @medium.user == current_user
         render json: { error: 'Não autorizado' }, status: :forbidden
       end
