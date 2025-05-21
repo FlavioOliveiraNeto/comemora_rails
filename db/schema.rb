@@ -68,12 +68,6 @@ ActiveRecord::Schema.define(version: 2025_05_21_042427) do
     t.index ["admin_id"], name: "index_events_on_admin_id"
   end
 
-  create_table "jwt_denylist", force: :cascade do |t|
-    t.string "jti", null: false
-    t.datetime "exp", null: false
-    t.index ["jti"], name: "index_jwt_denylist_on_jti"
-  end
-
   create_table "jwt_denylists", force: :cascade do |t|
     t.string "jti"
     t.datetime "exp"

@@ -15,8 +15,10 @@ module Api
           id: m.id,
           file_url: url_for(m.file),
           user_id: m.user_id,
+          user_name: m.user.name,
           description: m.description,
-          created_at: m.created_at
+          created_at: m.created_at,
+          type: get_media_type(m.file.content_type)
         }
       }
     end
@@ -41,8 +43,10 @@ module Api
           id: @medium.id,
           file_url: url_for(@medium.file),
           user_id: @medium.user_id,
+          user_name: @medium.user.name,
           description: @medium.description,
-          created_at: @medium.created_at
+          created_at: @medium.created_at,
+          type: get_media_type(@medium.file.content_type)
         }, status: :created
       else
         render json: {
@@ -80,6 +84,17 @@ module Api
     def authorize_event_media_access
       unless @event.admin?(current_user) || @event.accepted_participant?(current_user)
         render json: { error: 'Você não tem acesso às mídias deste evento.' }, status: :forbidden
+      end
+    end
+
+    # Helper para determinar o tipo da mídia (foto ou vídeo)
+    def get_media_type(content_type)
+      if content_type.starts_with?('image/')
+        'photo'
+      elsif content_type.starts_with?('video/')
+        'video'
+      else
+        'unknown'
       end
     end
   end
