@@ -1,51 +1,41 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.7.6'
+ruby '3.1.0'
 
-# Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 5.2.8', '>= 5.2.8.1'
-# Use postgresql as the database for Active Record
-gem 'pg', '>= 0.18', '< 2.0'
-# Use Puma as the app server
-gem 'puma', '~> 3.11'
-# Use SCSS for stylesheets
-gem 'sass-rails', '~> 5.0'
-# Use Uglifier as compressor for JavaScript assets
-gem 'uglifier', '>= 1.3.0'
-# Transpile app-like JavaScript. Read more: https://github.com/rails/webpacker
-gem 'webpacker'
-# See https://github.com/rails/execjs#readme for more supported runtimes
-gem 'duktape'
-# Use CoffeeScript for .coffee assets and views
-gem 'coffee-rails', '~> 4.2'
-# Turbolinks makes navigating your web application faster. Read more: https://github.com/turbolinks/turbolinks
-gem 'turbolinks', '~> 5'
-# Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
+gem 'rails', '~> 7.0.0'
+gem 'pg', '~> 1.0' # Mais recente e compatível com Rails 7
+gem 'puma', '~> 5.0' # Ou '~> 6.0', compatível com Rails 7
+
+# As gems abaixo são para o Asset Pipeline tradicional (Rails 5/6).
+# No Rails 7, a abordagem padrão mudou para jsbundling-rails e cssbundling-rails.
+# Se você tiver problemas, considere substituí-las ou migrar para a nova abordagem.
+gem 'sass-rails', '~> 5.0' # Para SASS, Rails 7 prefere 'dart-sass' com 'cssbundling-rails'
+gem 'uglifier', '>= 1.3.0' # Pode ser substituído por 'terser'
+gem 'webpacker' # Substituído por 'jsbundling-rails' e 'cssbundling-rails'
+# gem 'duktape' # Geralmente não necessário com Node.js para assets
+# gem 'coffee-rails', '~> 4.2'
+gem 'turbolinks', '~> 5' # Substituído por 'turbo-rails' (Hotwire)
+
 gem 'jbuilder', '~> 2.5'
-# Use Redis adapter to run Action Cable in production
-# gem 'redis', '~> 4.0'
-# Use ActiveModel has_secure_password
-# gem 'bcrypt', '~> 3.1.7'
+gem 'redis', '~> 4.0' # Descomente se usar Redis
+gem 'bcrypt', '~> 3.1.7' # Descomente se usar has_secure_password
+gem 'mini_magick', '~> 4.8' # Descomente se usar ActiveStorage variants
 
-# Use ActiveStorage variant
-# gem 'mini_magick', '~> 4.8'
+# gem 'capistrano-rails', group: :development # Descomente se usar Capistrano
 
-# Use Capistrano for deployment
-# gem 'capistrano-rails', group: :development
+gem 'bootsnap', '>= 1.18.6', require: false
 
-# Reduces boot times through caching; required in config/boot.rb
-gem 'bootsnap', '>= 1.1.0', require: false
-
+gem 'logger'
+gem 'concurrent-ruby', '1.3.4'
 gem 'devise'
-gem 'devise-i18n'
+# gem 'devise-i18n', '~> 1.13.0'
 gem 'rack-cors'
 gem 'devise-jwt'
 gem 'pundit'
 gem 'kaminari'
 
 group :development, :test do
-  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'dotenv-rails'
   gem 'rspec-rails'
@@ -53,16 +43,14 @@ group :development, :test do
   gem 'faker'
   gem 'shoulda-matchers'
   gem 'capybara'
-  gem 'selenium-webdriver'  # opcional, mas recomendado para testes JS
-  gem 'webdrivers'           # ajuda a baixar automaticamente o driver do navegador
-  gem 'warden'  
+  gem 'selenium-webdriver'
+  gem 'webdrivers'
+  gem 'warden'
 end
 
 group :development do
-  # Access an interactive console on exception pages or by calling 'console' anywhere in the code.
-  gem 'web-console', '>= 3.3.0'
+  gem 'web-console', '~> 4.0'
   gem 'letter_opener'
 end
 
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]

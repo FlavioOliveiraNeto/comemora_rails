@@ -1,6 +1,7 @@
 require_relative 'boot'
 
-require "rails"
+require "rails/all"
+require 'logger'
 # Pick the frameworks you want:
 require "active_model/railtie"
 require "active_job/railtie"
@@ -20,7 +21,8 @@ Bundler.require(*Rails.groups)
 module ComemoraRails
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 5.2
+    # ATUALIZADO: Defina para a versão do Rails que você está usando (7.0)
+    config.load_defaults 7.0 
 
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration can go into files in config/initializers
