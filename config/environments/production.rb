@@ -64,6 +64,20 @@ Rails.application.configure do
   # config.active_job.queue_name_prefix = "comemora_rails_production"
 
   config.action_mailer.perform_caching = false
+  config.action_mailer.raise_delivery_errors = false # Defina como true para depurar erros de entrega
+  config.action_mailer.default_url_options = { host: 'https://comemora-rails.onrender.com' } 
+
+  # Configuração SMTP para SendGrid (ou outro serviço)
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              'smtp.sendgrid.net', # Host do SendGrid
+    port:                 587,                 # Porta padrão para TLS
+    domain:               'comemora-rails.onrender.com',
+    user_name:            'apikey',            # Para SendGrid, o user_name é 'apikey'
+    password:             ENV['SENDGRID_API_KEY'], # Sua chave API do SendGrid
+    authentication:       :plain,
+    enable_starttls_auto: true
+  }
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
