@@ -47,6 +47,11 @@ class Event < ApplicationRecord
     admin?(user) || accepted_participant?(user)
   end
 
+  # Método para retornar o nome do administrador do evento
+  def admin_name
+    admin&.name
+  end
+
   # Banner methods
   def banner_url
     return nil unless banner.attached?

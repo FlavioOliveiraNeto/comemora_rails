@@ -9,7 +9,7 @@ module Api
 
     # GET /api/events
     def index
-      @events = Event.upcoming.page(params[:page]).per(10) # Paginação usando 'kaminari' ou 'will_paginate'
+      @events = Event.upcoming.page(params[:page]).per(10)
       render json: @events
     end
 
@@ -58,7 +58,7 @@ module Api
             methods: [:file_url]
           }
         },
-        methods: [:banner_url]
+        methods: [:banner_url, :admin_name]
       ), status: :ok
     end
 
@@ -172,7 +172,7 @@ module Api
         include: {
           participants: { only: [:id, :name, :email] }
         },
-        methods: [:banner_url]
+        methods: [:banner_url, :admin_name]
       ), status: :ok
     end
 
