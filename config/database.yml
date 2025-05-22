@@ -1,35 +1,72 @@
+# PostgreSQL. Versions 9.1 and up are supported.
+#
+# Install the pg gem:
+#   gem 'pg'
+#
+# To use JRuby:
+#   gem 'activerecord-jdbcpostgresql-adapter'
+#
+# Configure Using Gemfile
+# gem 'pg'
+#
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: 5
-  username: postgres
-  password: Haophasop123
-  host: localhost
+  # Para detalhes sobre pool de conexão, veja o guia de configuração do Rails
+  # http://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
   <<: *default
-  database: comemora_rails_development
+  database: comemora_rails_development # Seu nome de banco de dados de desenvolvimento local
+  username: postgres # Seu usuário de banco de dados local
+  password: <%= ENV['DATABASE_PASSWORD'] %> # Sua senha de banco de dados local (geralmente via .env)
+  host: localhost # Host para ambiente de desenvolvimento local
 
+# Warning: The database defined as "test" will be erased and
+# re-created to ensure clean test environment.
+# Any changes made to the database will be lost.
 test:
   <<: *default
-  database: comemora_rails_test
+  database: comemora_rails_test # Seu nome de banco de dados de teste local
+  username: postgres
+  password: <%= ENV['DATABASE_PASSWORD'] %>
+  host: localhost
 
 production:
-  primary: &primary_production
-    <<: *default
-    database: comemora_rails_production
-    username: comemora_rails
-    password: <%= ENV["COMEMORA_RAILS_DATABASE_PASSWORD"] %>
-  cache:
-    <<: *primary_production
-    database: comemora_rails_production_cache
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: comemora_rails_production_queue
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *primary_production
-    database: comemora_rails_production_cable
-    migrations_paths: db/cable_migrate
+  <<: *default
+  # Render injeta DATABASE_URL. Use-a aqui para a conexão principal.
+  url: <%= ENV['DATABASE_URL'] %>
+  # Se você não usar a URL, precisaria configurar host, port, username, password, database separadamente
+  # host: <%= ENV['DB_HOST'] %>
+  # port: <%= ENV['DB_PORT'] %>
+  # username: <%= ENV['DB_USERNAME'] %>
+  # password: <%= ENV['DB_PASSWORD'] %>
+  # database: <%= ENV['DB_NAME'] %>
+
+  # Opcional: Se você estiver usando SSL para o banco de dados (o Render geralmente exige)
+  # sslmode: require
+  # sslrootcert: "/etc/ssl/certs/ca-certificates.crt" # Caminho comum em sistemas Linux
+
+  # A configuração abaixo é para múltiplos bancos de dados ou sharding.
+  # Para um deploy padrão de um único serviço Rails no Render, o 'url: <%= ENV['DATABASE_URL'] %>' acima é suficiente.
+  # Se você realmente precisar de múltiplos bancos de dados, precisará configurar variáveis de ambiente separadas para cada um no Render
+  # (ex: PRIMARY_DATABASE_URL, CACHE_DATABASE_URL, etc.) e ajustar o código Rails para usá-las.
+  #
+  # primary: &primary_production
+  #   <<: *default
+  #   database: comemora_rails_production
+  #   username: comemora_rails
+  #   password: <%= ENV["COMEMORA_RAILS_DATABASE_PASSWORD"] %>
+  # cache:
+  #   <<: *primary_production
+  #   database: comemora_rails_production_cache
+  #   migrations_paths: db/cache_migrate
+  # queue:
+  #   <<: *primary_production
+  #   database: comemora_rails_production_queue
+  #   migrations_paths: db/queue_migrate
+  # cable:
+  #   <<: *primary_production
+  #   database: comemora_rails_production_cable
+  #   migrations_paths: db/cable_migrate
