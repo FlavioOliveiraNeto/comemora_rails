@@ -56,11 +56,10 @@ class Event < ApplicationRecord
   def banner_url
     return nil unless banner.attached?
     
-    Rails.application.routes.url_helpers.rails_blob_url(
-      banner,
-      host: 'localhost:3000',
-      protocol: 'http'
-    )
+    Rails.application.routes.url_helpers.rails_blob_url(banner)
+  rescue StandardError => e
+    Rails.logger.error "Error generating URL for banner #{id}: #{e.message}"
+    nil
   end
 
   # Invitation system
