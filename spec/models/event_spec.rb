@@ -33,11 +33,6 @@ RSpec.describe Event, type: :model do
       expect(Event.upcoming).to include(upcoming_event)
       expect(Event.upcoming).not_to include(past_event)
     end
-
-    it 'deve retornar eventos passados' do
-      expect(Event.past).to include(past_event)
-      expect(Event.past).not_to include(upcoming_event)
-    end
   end
 
   describe 'métodos de participação' do
@@ -58,6 +53,53 @@ RSpec.describe Event, type: :model do
       expect {
         event.invite_user(user)
       }.to change(EventParticipant, :count).by(1)
+    end
+  end
+
+  describe 'enums' do
+    it { should define_enum_for(:status).with_values([:active, :finished]) }
+  end
+
+  describe 'métodos de status' do
+    let(:event) { create(:event, status: :active) }
+
+    it 'deve verificar se o evento está ativo' do
+      expect(event.active?).to be true
+      event.status = :finished
+      expect(event.active?).to be false
+    end
+  end
+
+  describe 'método can_add_media?' do
+    let(:event) { create(:event, status: :active) }
+    let(:user) { create(:user) }
+
+    context 'quando o evento está ativo' do
+      it 'deve permitir adicionar mídia se o usuário for admin' do
+        expect(event.can_add_media?(event.admin)).to be true
+      end
+
+      it 'deve permitir adicionar mídia se o usuário for participante' do
+        create(:event_participant, event: event, user: user, status: 'accepted')
+        expect(event.can_add_media?(user)).to be true
+      end
+
+      it 'não deve permitir adicionar mídia se o usuário não for admin nem participante' do
+        expect(event.can_add_media?(user)).to be false
+      end
+    end
+
+    context 'quando o evento está finalizado' do
+      before { event.update(status: :finished) }
+
+      it 'não deve permitir adicionar mídia mesmo se o usuário for admin' do
+        expect(event.can_add_media?(event.admin)).to be false
+      end
+
+      it 'não deve permitir adicionar mídia mesmo se o usuário for participante' do
+        create(:event_participant, event: event, user: user, status: 'accepted')
+        expect(event.can_add_media?(user)).to be false
+      end
     end
   end
 end

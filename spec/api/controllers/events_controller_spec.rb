@@ -36,6 +36,7 @@ RSpec.describe Api::EventsController, type: :controller do
         post :create, params: valid_params
       }.to change(Event, :count).by(1)
       expect(response).to have_http_status(:created)
+      expect(Event.last.status).to eq('active')
     end
   end
 
@@ -53,6 +54,15 @@ RSpec.describe Api::EventsController, type: :controller do
       put :update, params: update_params
       expect(response).to have_http_status(:ok)
       expect(event.reload.title).to eq('Título Atualizado')
+    end
+
+    context 'quando o evento está finalizado' do
+      let(:finished_event) { create(:event, admin: user, status: :finished) }
+
+      it 'não deve permitir a atualização' do
+        put :update, params: { id: finished_event.id, event: { title: 'Novo Título' } }
+        expect(response).to have_http_status(:bad_request)
+      end
     end
   end
 

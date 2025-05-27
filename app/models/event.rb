@@ -26,6 +26,9 @@ class Event < ApplicationRecord
   scope :past, -> { where('end_date < ?', Time.current).order(start_date: :desc) }
   scope :administered_by, ->(user) { where(admin: user) }
 
+  # Enums
+  enum status: { active: 0, finished: 1 }
+
   # Role checking methods
   def admin?(user)
     admin == user
@@ -44,7 +47,11 @@ class Event < ApplicationRecord
   end  
 
   def can_add_media?(user)
-    admin?(user) || accepted_participant?(user)
+    active? && (admin?(user) || accepted_participant?(user))
+  end
+
+  def active?
+    status.to_s == 'active'
   end
 
   # Método para retornar o nome do administrador do evento

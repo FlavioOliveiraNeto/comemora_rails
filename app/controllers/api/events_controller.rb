@@ -30,9 +30,9 @@ module Api
       @event = current_user.organized_events.new(event_params)
       
       if @event.save
-        # Adicione esta linha para processar o banner se existir
         @event.banner.attach(params[:event][:banner]) if params[:event][:banner]
-        
+        @event.update(status: :active)
+
         render json: { 
           evento: @event.as_json.merge(banner_url: @event.banner_url),
           message: 'Evento criado com sucesso.' 
@@ -64,6 +64,10 @@ module Api
 
     # PUT/PATCH /api/events/:id
     def update
+      if @event.status == 'finished'
+        return render json: { error: 'Evento finalizado não pode ser atualizado' }, status: :bad_request
+      end
+
       keep_banner = params[:event].delete(:keep_banner)
       @event.assign_attributes(event_params)
     
@@ -116,7 +120,7 @@ module Api
     
         participant = event.event_participants.find_or_create_by(
           user_id: current_user.id,
-          status: 'accepted' # Ou o status apropriado
+          status: 'accepted'
         )
     
         participant.persisted? ? success_response(event) : error_response(participant)
