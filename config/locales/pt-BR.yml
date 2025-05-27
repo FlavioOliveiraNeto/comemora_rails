@@ -1,0 +1,9 @@
+pt-BR:
+  hello: "Olá"
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M:%S"
+      short: "%d/%m, %H:%M"
+      long: "%d de %B de %Y, %H:%M"
+    am: "da manhã"
+    pm: "da tarde"

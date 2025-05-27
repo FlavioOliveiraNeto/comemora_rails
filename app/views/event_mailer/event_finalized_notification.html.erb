@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+  <p>Olá <%= @admin.name %>,</p>
+
+  <p>Informamos que o evento "<%= @event.title %>" foi finalizado automaticamente em <%= l @event.end_date, format: :long %>.</p>
+
+  <p>A partir deste momento, não será mais possível enviar novas mídias para este evento.</p>
+
+  <p>O álbum de fotos e o vídeo de lembrança já podem ser criados na página do evento: </p><a href="<%= event_url(@event) %>"><%= event_url(@event) %></a>
+
+  <p>Obrigado!</p>
+</body>
+</html>

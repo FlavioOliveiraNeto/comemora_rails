@@ -34,6 +34,7 @@ gem 'rack-cors'
 gem 'devise-jwt'
 gem 'pundit'
 gem 'kaminari'
+gem 'whenever'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]

@@ -1,0 +1,3 @@
+EventMailer#event_finalized_notification
+
+Hi, find me in app/views/event_mailer/event_finalized_notification
