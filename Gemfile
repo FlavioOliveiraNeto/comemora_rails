@@ -35,6 +35,7 @@ gem 'devise-jwt'
 gem 'pundit'
 gem 'kaminari'
 gem 'whenever'
+gem 'prawn'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]

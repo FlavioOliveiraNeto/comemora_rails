@@ -4,8 +4,8 @@ module Api
     
     before_action :authenticate_user!
     skip_before_action :authenticate_user!, only: [:event_details]
-    before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :add_media, :leave]
-    before_action :authorize_event, except: [:index, :create, :my_events, :participating, :event_details]
+    before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :add_media, :leave, :create_album]
+    before_action :authorize_event, except: [:index, :create, :my_events, :participating, :event_details, :create_album]
 
     # GET /api/events
     def index
@@ -178,6 +178,37 @@ module Api
         },
         methods: [:banner_url, :admin_name]
       ), status: :ok
+    end
+
+    def create_album
+      pdf = Prawn::Document.new
+
+      @event.event_media.each do |event_medium|
+        if event_medium.medium.file.attached?
+          begin
+            io = URI.open(rails_blob_url(event_medium.medium.file))
+            pdf.image io, fit: [500, 500] 
+            pdf.move_down 10
+
+            if event_medium.medium.description.present?
+              pdf.text event_medium.medium.description, size: 10
+              pdf.move_down 20
+            end
+          rescue OpenURI::HTTPError => e
+            Rails.logger.error "Erro ao abrir imagem: #{e.message} para a mídia ID #{event_medium.medium.id}"
+            pdf.text "Erro ao carregar imagem para a mídia ID #{event_medium.medium.id}", size: 8, color: "FF0000"
+            pdf.move_down 20
+          end
+        else
+          pdf.text "Mídia ID #{event_medium.medium.id} não anexada.", size: 8
+          pdf.move_down 20
+        end
+      end
+
+      send_data pdf.render,
+                filename: "#{@event.title.parameterize}-album.pdf",
+                type: 'application/pdf',
+                disposition: 'attachment'
     end
 
     private
