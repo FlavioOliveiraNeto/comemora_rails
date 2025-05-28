@@ -69,21 +69,26 @@ module Api
       end
 
       keep_banner = params[:event].delete(:keep_banner)
+      banner_param = params[:event][:banner]
+      params[:event].delete(:banner)
+
       @event.assign_attributes(event_params)
-    
-      # Lógica de controle do banner
-      if keep_banner == 'false' && @event.banner.attached?
-        @event.banner.purge_later
-      end
-    
+
       if @event.save
-        @event.banner.attach(params[:event][:banner]) if params[:event][:banner]
-        render json: { 
+        if banner_param.present?
+          @event.banner.purge_later if keep_banner == 'false' && @event.banner.attached?
+          @event.banner.attach(banner_param)
+          @event.save
+        elsif keep_banner == 'false' && @event.banner.attached?
+          @event.banner.purge_later
+        end
+
+        render json: {
           evento: @event.as_json(methods: [:banner_url]),
           message: 'Evento atualizado com sucesso'
         }
       else
-        render json: { 
+        render json: {
           errors: @event.errors.full_messages,
           message: 'Falha na atualização'
         }, status: :unprocessable_entity

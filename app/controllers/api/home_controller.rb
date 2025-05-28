@@ -16,22 +16,26 @@ module Api
     private
 
     def serialized_organized_events
-      current_user.organized_events.as_json(
-        include: {
-          participants: { only: [:id, :name, :email] }
-        },
-        methods: [:banner_url]
-      )
+      current_user.organized_events.order(Arel.sql("CASE events.status WHEN #{Event.statuses[:active]} THEN 0 ELSE 1 END"), :start_date)
+        .as_json(
+          include: {
+            participants: { only: [:id, :name, :email] }
+          },
+          methods: [:banner_url]
+        )
     end
 
     def serialized_participating_events
-      current_user.participating_events.where(event_participants: { status: 'accepted' }).as_json(
-        include: {
-          admin: { only: [:id, :name, :email] },
-          participants: { only: [:id, :name, :email] }
-        },
-        methods: [:banner_url]
-      )
+      current_user.participating_events
+        .where(event_participants: { status: 'accepted' })
+        .order(Arel.sql("CASE events.status WHEN #{Event.statuses[:active]} THEN 0 ELSE 1 END"), :start_date)
+        .as_json(
+          include: {
+            admin: { only: [:id, :name, :email] },
+            participants: { only: [:id, :name, :email] }
+          },
+          methods: [:banner_url]
+        )
     end
   end
 end
