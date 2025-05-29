@@ -1,6 +1,7 @@
 module Api
   class EventsController < ApplicationController
     include Pundit::Authorization
+    include ActionController::MimeResponds
     
     before_action :authenticate_user!
     skip_before_action :authenticate_user!, only: [:event_details]
@@ -186,34 +187,11 @@ module Api
     end
 
     def create_album
-      pdf = Prawn::Document.new
+      @event_media = @event.event_media
 
-      @event.event_media.each do |event_medium|
-        if event_medium.medium.file.attached?
-          begin
-            io = URI.open(rails_blob_url(event_medium.medium.file))
-            pdf.image io, fit: [500, 500] 
-            pdf.move_down 10
-
-            if event_medium.medium.description.present?
-              pdf.text event_medium.medium.description, size: 10
-              pdf.move_down 20
-            end
-          rescue OpenURI::HTTPError => e
-            Rails.logger.error "Erro ao abrir imagem: #{e.message} para a mídia ID #{event_medium.medium.id}"
-            pdf.text "Erro ao carregar imagem para a mídia ID #{event_medium.medium.id}", size: 8, color: "FF0000"
-            pdf.move_down 20
-          end
-        else
-          pdf.text "Mídia ID #{event_medium.medium.id} não anexada.", size: 8
-          pdf.move_down 20
-        end
+      respond_to do |format|
+        format.html { render template: 'events/album_download' }
       end
-
-      send_data pdf.render,
-                filename: "#{@event.title.parameterize}-album.pdf",
-                type: 'application/pdf',
-                disposition: 'attachment'
     end
 
     private

@@ -16,7 +16,7 @@ Rails.application.routes.draw do
         post 'decline'          # Recusar convite
         delete 'leave'          # Sair do evento
         get :event_details      # Informações detalhadas do evento
-        post :create_album      # Criar álbum de fotos do evento
+        get 'download_album_html', to: 'events#create_album', format: :html     # Criar álbum de fotos do evento
       end
       
       collection do

@@ -20,7 +20,7 @@ gem 'turbolinks', '~> 5' # Substituído por 'turbo-rails' (Hotwire)
 gem 'jbuilder', '~> 2.5'
 gem 'redis', '~> 4.0' # Descomente se usar Redis
 gem 'bcrypt', '~> 3.1.7' # Descomente se usar has_secure_password
-gem 'mini_magick', '~> 4.8' # Descomente se usar ActiveStorage variants
+gem 'mini_magick', '~> 5.2' # Descomente se usar ActiveStorage variants
 
 # gem 'capistrano-rails', group: :development # Descomente se usar Capistrano
 
@@ -35,7 +35,7 @@ gem 'devise-jwt'
 gem 'pundit'
 gem 'kaminari'
 gem 'whenever'
-gem 'prawn'
+gem 'image_processing'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]

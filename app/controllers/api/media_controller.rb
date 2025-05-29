@@ -8,7 +8,7 @@ module Api
 
     # GET /api/events/:event_id/media
     def index
-      @media = @event.media.includes(:user).order(created_at: :desc)
+      @media = @event.media.includes(:user).order(created_at: :asc)
 
       render json: @media.map { |m|
         {
