@@ -2,11 +2,12 @@ module Api
   class EventsController < ApplicationController
     include Pundit::Authorization
     include ActionController::MimeResponds
-    
+
     before_action :authenticate_user!
     skip_before_action :authenticate_user!, only: [:event_details]
     before_action :set_event, only: [:show, :update, :destroy, :invite, :join, :decline, :add_media, :leave, :create_album]
     before_action :authorize_event, except: [:index, :create, :my_events, :participating, :event_details, :create_album]
+    before_action :check_and_finalize_expired_event, only: [:show, :update, :destroy, :invite, :join, :decline, :add_media, :leave, :create_album]
 
     # GET /api/events
     def index
@@ -29,14 +30,14 @@ module Api
     # POST /api/events
     def create
       @event = current_user.organized_events.new(event_params)
-      
+
       if @event.save
         @event.banner.attach(params[:event][:banner]) if params[:event][:banner]
         @event.update(status: :active)
 
-        render json: { 
+        render json: {
           evento: @event.as_json.merge(banner_url: @event.banner_url),
-          message: 'Evento criado com sucesso.' 
+          message: 'Evento criado com sucesso.'
         }, status: :created
       else
         render json: @event.errors, status: :unprocessable_entity
@@ -65,9 +66,7 @@ module Api
 
     # PUT/PATCH /api/events/:id
     def update
-      if @event.status == 'finished'
-        return render json: { error: 'Evento finalizado não pode ser atualizado' }, status: :bad_request
-      end
+      previous_status = @event.status
 
       keep_banner = params[:event].delete(:keep_banner)
       banner_param = params[:event][:banner]
@@ -82,6 +81,12 @@ module Api
           @event.save
         elsif keep_banner == 'false' && @event.banner.attached?
           @event.banner.purge_later
+        end
+
+        # Verifica se o status mudou para 'finished' nesta atualização
+        if previous_status != 'finished' && @event.status == 'finished'
+          Rails.logger.info "Evento '#{@event.title}' (ID: #{@event.id}) finalizado automaticamente via frontend."
+          EventMailer.event_finalized_notification(@event).deliver_now
         end
 
         render json: {
@@ -105,7 +110,7 @@ module Api
     # POST /api/events/:id/invite
     def invite
       user = User.find_by(id: params[:user_id])
-      
+
       if user.nil?
         return render json: { error: 'Usuário não encontrado' }, status: :not_found
       end
@@ -121,16 +126,16 @@ module Api
     def join
       begin
         event = Event.find(params[:id])
-        
+
         return invalid_token_response unless valid_token?(event)
-    
+
         participant = event.event_participants.find_or_create_by(
           user_id: current_user.id,
           status: 'accepted'
         )
-    
+
         participant.persisted? ? success_response(event) : error_response(participant)
-    
+
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Evento não encontrado' }, status: :not_found
       end
@@ -148,7 +153,7 @@ module Api
     # DELETE /api/events/:id/leave
     def leave
       participant = @event.event_participants.find_by(user: current_user)
-      
+
       if participant&.destroy
         render json: { message: 'Você saiu do evento com sucesso' }
       else
@@ -159,25 +164,25 @@ module Api
     # GET /api/events/:id/event_details
     def event_details
       @event = Event.find_by(id: params[:id])
-    
+
       if @event.nil?
         return render json: { error: 'Evento não encontrado' }, status: :not_found
       end
-    
+
       authorized = false
-    
+
       if user_signed_in?
         authorized = @event.admin?(current_user) || @event.participant?(current_user)
       end
-    
+
       if !authorized && params[:token].present?
         authorized = Event.where(invite_token: params[:token]).present?
       end
-    
+
       unless authorized
         return render json: { error: 'Você não tem permissão para ver este evento.' }, status: :forbidden
       end
-    
+
       render json: @event.as_json(
         include: {
           participants: { only: [:id, :name, :email] }
@@ -207,22 +212,22 @@ module Api
     def valid_token?(event)
       event.invite_token == params[:token]
     end
-    
+
     def invalid_token_response
       render json: { error: 'Convite inválido' }, status: :forbidden
     end
 
     def success_response(event)
-      render json: { 
+      render json: {
         event: event,
         message: 'Você entrou no evento com sucesso!'
       }, status: :ok
     end
-    
+
     def error_response(participant)
-      render json: { 
+      render json: {
         error: 'Não foi possível entrar no evento',
-        details: participant.errors.full_messages 
+        details: participant.errors.full_messages
       }, status: :unprocessable_entity
     end
 
@@ -237,13 +242,25 @@ module Api
 
     def event_params
       params.require(:event).permit(
-        :title, 
-        :description, 
-        :start_date, 
-        :end_date, 
+        :title,
+        :description,
+        :start_date,
+        :end_date,
         :location,
         :banner,
+        :status
       )
+    end
+
+    def check_and_finalize_expired_event
+      if @event && @event.end_date < Time.current && @event.status == 'active'
+        if @event.update(status: :finished)
+          Rails.logger.info "Evento '#{@event.title}' (ID: #{@event.id}) finalizado automaticamente ao carregar."
+          EventMailer.event_finalized_notification(@event).deliver_now
+        else
+          Rails.logger.error "Falha ao finalizar automaticamente o evento '#{@event.title}' (ID: #{@event.id}) ao carregar."
+        end
+      end
     end
   end
 end

@@ -10,7 +10,7 @@
 
   <p>A partir deste momento, não será mais possível enviar novas mídias para este evento.</p>
 
-  <p>O álbum de fotos e o vídeo de lembrança já podem ser criados na página do evento: </p><a href="<%= event_url(@event) %>"><%= event_url(@event) %></a>
+  <p>O álbum de fotos e o vídeo de lembrança já podem ser criados na página do evento: </p><a href="<%= url_for(@event, host: Rails.application.config.action_mailer.default_url_options[:host]) %>"><%= url_for(@event, host: Rails.application.config.action_mailer.default_url_options[:host]) %></a>
 
   <p>Obrigado!</p>
 </body>
