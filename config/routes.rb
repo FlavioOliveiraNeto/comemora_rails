@@ -5,6 +5,10 @@ Rails.application.routes.draw do
     passwords: 'passwords',
     confirmations: 'confirmations'
   }
+
+  devise_scope :user do
+    get '/confirmation', to: 'confirmations#redirect_to_vue', as: :confirmation_redirect
+  end
   
   namespace :api do
     resources :home, only: [:index]

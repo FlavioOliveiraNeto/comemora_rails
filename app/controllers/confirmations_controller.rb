@@ -28,6 +28,10 @@ class ConfirmationsController < Devise::ConfirmationsController
     handle_confirmation_error(e)
   end
 
+  def redirect_to_vue
+    redirect_to "#{ENV['FRONTEND_URL']}/confirmar-email?confirmation_token=#{params[:confirmation_token]}"
+  end
+
   private
 
   def confirm_resource
